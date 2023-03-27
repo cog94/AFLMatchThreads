@@ -1,0 +1,9 @@
+praw
+pywin32
+requests
+sseclient
+json
+sqlite3
+datetime
+shutil
+os
