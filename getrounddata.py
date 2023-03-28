@@ -32,7 +32,7 @@ def getaflwebsitedata(roundnumber):
 
 def getcurrentroundfromdb():
     # Connect to the database
-    conn = sqlite3.connect('botdatabase.db')
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
 
     # Create a cursor
     cursor = conn.cursor()
