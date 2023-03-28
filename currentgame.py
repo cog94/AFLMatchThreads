@@ -125,12 +125,25 @@ def formatresult(gamedata):
     awaygoals = gamedata["agoals"] 
     awaybehinds = gamedata["abehinds"] 
 
+    result = ""
     if homescore > awayscore:
-        return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") defeated " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+            result += hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") defeated " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
     elif homescore < awayscore:
-        return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") was defeated by " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+            result += hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") was defeated by " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
     else:
-        return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") drew with " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+            result += hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") drew with " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+
+    if hometeam == "Essendon" or awayteam == "Essendon":
+            if hometeam == "Essendon" and homescore > awayscore or awayteam == "Essendon" and awayscore > homescore:
+                result += ". [HOIST IT](https://gfycat.com/diligentcooleasternnewt)"
+    return result
+
+    # if homescore > awayscore:
+    #     return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") defeated " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+    # elif homescore < awayscore:
+    #     return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") was defeated by " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
+    # else:
+    #     return hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") drew with " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
 
 def updateroundhub(url):
      # Connect to the database
