@@ -18,7 +18,7 @@ def formatteamname(rawteamname):
 
 def createandschedulematchthreadscript():
     # Connect to the database
-    conn = sqlite3.connect('botdatabase.db')
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
     conn.row_factory = sqlite3.Row  
 
     # Create a cursor
@@ -96,7 +96,7 @@ def createandschedulematchthreadscript():
 
 def createandscheduleSSEscript():
     # Connect to the database
-    conn = sqlite3.connect('botdatabase.db')
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
     conn.row_factory = sqlite3.Row  
 
     # Create a cursor
@@ -159,7 +159,7 @@ def createandscheduleSSEscript():
 
 def updatedatabase(huburl):
     # Connect to the database
-    conn = sqlite3.connect('botdatabase.db')
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
     cursor = conn.cursor()
 
     # Check if the columns exist in the table
@@ -191,7 +191,7 @@ def updatedatabase(huburl):
 
 def createpost():
     # Connect to the database
-    conn = sqlite3.connect('botdatabase.db')
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
     conn.row_factory = sqlite3.Row  
 
     # Create a cursor
