@@ -196,8 +196,6 @@ INFORMATION | [](/empty)
 
 **Statistics** | [**AFL Match Centre**](https://www.afl.com.au/afl/matches/"""+str(getURL(gamedata["hteam"]))+""")
 
-**Discord** | [**Invite Link**](https://discord.com/invite/caQgFFEDRk)
-
 **Reddit Stream** | [**Stream**](https://reddit-stream.com/comments/auto)
 
 **TV** | [**AFL Broadcast Guide Avaliable Here**](http://www.afl.com.au/broadcastguide)
