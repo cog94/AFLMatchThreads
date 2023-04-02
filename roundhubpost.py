@@ -243,7 +243,7 @@ def createpost():
     # print("Logged in!")
 
     # creating the post title and body
-    post_title="Match Thread Index and Discussion: "+str(roundname)
+    post_title="Match Threads: "+str(roundname)
     post_body="# Match Centre ("+str(roundname)+""")
 |First Bounce|Fixture|Venue|MT|PMT|Score|
 |:-|:--:|:--:|:-|:-|:-|\n"""+listmarkupstring
