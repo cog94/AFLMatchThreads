@@ -45,7 +45,7 @@ def getcurrentroundfromdb():
 
     # Execute the query
     # cursor.execute("SELECT * FROM fixture WHERE date < ?", (week_from_now.strftime('%Y-%m-%d %H:%M:%S'),))
-    cursor.execute("SELECT * FROM fixture WHERE date >= ? AND date < ?", (current_date.strftime('%Y-%m-%d %H:%M:%S'), week_from_now.strftime('%Y-%m-%d %H:%M:%S')))
+    cursor.execute("SELECT * FROM fixture WHERE date >= ? AND date < ? ORDER BY datetime(strftime('%Y-%m-%d %H:%M:%S', localtime)) ASC", (current_date.strftime('%Y-%m-%d %H:%M:%S'), week_from_now.strftime('%Y-%m-%d %H:%M:%S')))
      
     # Fetch the results
     results = cursor.fetchall()
@@ -85,6 +85,7 @@ def getcurrentroundfromdb():
 
     # Insert the results into the "currentround" table
     for row in results:
+        print(row[0])
         cursor.execute('''INSERT INTO currentround (id, complete, year, winnerteamid, timestr, localtime, tz, hscore, hbehinds, is_final, agoals, abehinds, hgoals, ascore, hteam, hteamid, unixtime, round, ateamid, ateam, updated, winner, venue, roundname, date, is_grand_final)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19], row[20], row[21], row[22], row[23], row[24], row[25]))
@@ -114,6 +115,9 @@ def getFixtureData():
     json_data = fixture.json()
 
     if fixture.status_code == 200:
+        # Sort the data by earliest to latest localtime (datetime)
+        sorted_data = sorted(json_data['games'], key=lambda x: x['localtime'])
+
          # Connect to the database
         conn = sqlite3.connect(config.directory + 'botdatabase.db')
 
@@ -149,7 +153,7 @@ def getFixtureData():
                     date TEXT,
                     is_grand_final INTEGER)''')
 
-        for game in json_data['games']:
+        for game in sorted_data:
             cursor.execute('''INSERT INTO fixture (complete, year, winnerteamid, timestr, localtime, tz, id, hscore, hbehinds, is_final, agoals, abehinds, hgoals, ascore, hteam, hteamid, unixtime, round, ateamid, ateam, updated, winner, venue, roundname, date, is_grand_final)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                         (game['complete'], game['year'], game['winnerteamid'], game['timestr'], game['localtime'], game['tz'], game['id'], game['hscore'], game['hbehinds'], game['is_final'], game['agoals'], game['abehinds'], game['hgoals'], game['ascore'], game['hteam'], game['hteamid'], game['unixtime'], game['round'], game['ateamid'], game['ateam'], game['updated'], game['winner'], game['venue'], game['roundname'], game['date'], game['is_grand_final']))

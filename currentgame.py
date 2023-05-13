@@ -29,6 +29,133 @@ def formatimagename(rawteamname):
     else:
         return rawteamname
 
+def getURL(hometeam):
+    # CONVERTING THE TEAM NAME FROM SQUIGGLE API TO MATCH AFL WEBSITE API DATA
+
+    teamDict = {
+        "Collingwood": "COLL",
+        "Sydney": "SYD",
+        "Greater Western Sydney": "GWS",
+        "Adelaide": "ADEL",
+        "Hawthorn": "HAW",
+        "Melbourne": "MELB",
+        "West Coast": "WCE",
+        "Port Adelaide": "PORT",
+        "Richmond": "RICH",
+        "Fremantle": "FRE",
+        "Geelong":  "GEEL",
+        "Gold Coast":  "GCFC",
+        "Essendon": "ESS",
+        "Western Bulldogs": "WB" , 
+        "North Melbourne": "NMFC" ,
+        "Brisbane Lions": "BL" ,
+        "Carlton": "CARL",
+        "St Kilda": "STK", 
+    }
+
+    matchid_data_dict = {}
+
+    #OPEN JSON FILE FOR CURRENT ROUND AFL WEBSITE DATA
+    fa = open(config.directory+'afl_website_round_data.json')
+    aflwebsitedata = json.load(fa)
+
+    aflmatchdata = aflwebsitedata.get("matches")
+
+    #FOR EACH MATCH, GRAB HOME TEAM ABBREVIATION AND MATCHID, STORE IN KEY-VALUE PAIR
+    for i in aflmatchdata:
+        matchid = i["id"]
+        hometeamarray = i["home"].get("team")
+        hometeamabbreviation = hometeamarray["abbreviation"]
+        matchid_data_dict[hometeamabbreviation] = matchid
+
+    fa.close()
+
+    # GET ABBREVIATION OF SQUIGGLE DATA TEAM NAME, MATCH TO THE URL ID FROM AFL WEBSITE JSON. RETURN THE MATCH ID
+    if hometeam in teamDict.keys():
+        teamname = (teamDict.get(hometeam))
+        # print(matchid_data_dict.get(teamname))
+        return matchid_data_dict.get(teamname)
+
+
+# edit the match thread with the post match thread url
+def redditmatchthreadupdate(gamedata, postmatchurl):
+    matchthreadurl = gamedata['matchthreadurl']
+
+    # Format the date and timezone
+    date = gamedata['date']
+    rawdate = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+
+    # the API has vicbias, so the timezones default to melbourne (and the other eastern states who aren't scared of daylight savings) time. 
+    if gamedata["tz"] == "+11:00":
+        tz = "AEDT"    
+    else:
+        tz = "AEST"
+
+    formattedDate = rawdate.strftime("%A %d %B")
+    formattedTime = rawdate.strftime("%I:%M%p")
+
+    if gamedata['tz'] == "+11:00":
+        tz = "AEDT"    
+    else:
+        tz = "AEST"
+
+    formattedDate = rawdate.strftime("%A %d %b, %H:%M")
+
+ # creating the post body
+    post_body="""
+HOME TEAM | [](/empty) | AWAY TEAM
+:--:|:--:|:--:
+**"""+gamedata["hteam"]+"""** |  vs  | **"""+gamedata["ateam"]+"""** 
+[](/"""+formatimagename(gamedata["hteam"]).lower().replace(" ","")+"""2) |    | [](/"""+formatimagename(gamedata["ateam"]).lower().replace(" ","")+"""2)
+
+-----
+INFORMATION | [](/empty)
+    :--|:--
+-----
+
+**Date** |  """+formattedDate+"""
+
+**Time** |  """+formattedTime+" "+tz+"""
+
+**Ground** | """+gamedata["venue"]+"""
+
+**Statistics** | [**AFL Match Centre**](https://www.afl.com.au/afl/matches/"""+str(getURL(gamedata["hteam"]))+""")
+
+**Reddit Stream** | [**Stream**](https://reddit-stream.com/comments/auto)
+
+**TV** | [**AFL Broadcast Guide Avaliable Here**](http://www.afl.com.au/broadcastguide)
+
+Final teams available from the [**AFL Match Centre.**](https://www.afl.com.au/afl/matches/"""+str(getURL(gamedata["hteam"]))+""")
+
+-----
+
+**Post Match Thread** |  [**Link**]("""+config.subredditurlbase +str(postmatchurl)+""")
+
+**Match Thread Hub** |  [**Link**]("""+config.subredditurlbase +str(gamedata["roundhuburl"])+""")
+
+-----
+
+As a reminder, the comment rules are listed in the sidebar. You are responsible for following the rules!
+
+If you see a comment or post that breaks the rules, please report it to the moderators. This helps keep the subreddit clear of rule-breaking content. 
+
+If you want to make **any** comment on the umpiring *only*, the comment must be a rhyme or limerick while also in line with the subreddits rules. No abuse. No snide swipes at an individual, do not be a dickhead, any comments not doing this will be removed.
+
+See any antisocial behaviour? Please report dickhead comments around you using the report button.
+
+Antisocial behaviour can result in your removal from the Match Thread (1 day ban).
+    
+    """
+
+
+    reddit = praw.Reddit(client_id = config.client_id,  
+                         client_secret = config.client_secret,  
+                         username = config.username,  
+                         password = config.password, 
+                         user_agent = config.user_agent) 
+
+    submission = reddit.submission(url=config.subredditurlbase + str(matchthreadurl))
+    submission.edit(body=post_body)
 
 # edit the round hub post for round with match thread urls
 def redditsubmissionupdate():
@@ -40,7 +167,7 @@ def redditsubmissionupdate():
     cursor = conn.cursor()
 
     # Retrieve all data from the currentround table
-    cursor.execute("SELECT * FROM currentround")
+    cursor.execute("SELECT * FROM currentround ORDER BY datetime(strftime('%Y-%m-%d %H:%M:%S', date)) ASC")
     rows = cursor.fetchall()
 
     huburl = (rows[0]['roundhuburl'])
@@ -134,8 +261,33 @@ def formatresult(gamedata):
             result += hometeam + " (" +str(homegoals) +"." + str(homebehinds) + "." + str(homescore) +") drew with " + awayteam + " (" + str(awaygoals) + "." + str(awaybehinds) + "." + str(awayscore) + ")"
 
     if hometeam == "Essendon" or awayteam == "Essendon":
-            if hometeam == "Essendon" and homescore > awayscore or awayteam == "Essendon" and awayscore > homescore:
-                result += ". [HOIST IT](https://gfycat.com/diligentcooleasternnewt)"
+        if hometeam == "Essendon" and homescore > awayscore or awayteam == "Essendon" and awayscore > homescore:
+            result += ". [HOIST IT, DILIGENTLY](https://gfycat.com/diligentcooleasternnewt)"
+
+    if hometeam == "Collingwood" or awayteam == "Collingwood":
+        if hometeam == "Collingwood" and homescore > awayscore or awayteam == "Collingwood" and awayscore > homescore:
+            result += ". [HOIST IT | COLLINGWOOD VERSION, GONE WILD](https://gfycat.com/sameradianticelandichorse)"
+
+    if hometeam == "Geelong" or awayteam == "Geelong":
+        if hometeam == "Geelong" and homescore > awayscore or awayteam == "Geelong" and awayscore > homescore:
+            result += ". [GEELONG_WIN.GIF](https://imgur.com/Fwu3Rl8)"
+
+    if hometeam == "Greater Western Sydney" or awayteam == "Greater Western Sydney":
+        if hometeam == "Greater Western Sydney" and homescore > awayscore or awayteam == "Greater Western Sydney" and awayscore > homescore:
+            result += ". [GWS_DANCE.MP4](https://www.youtube.com/watch?v=QQjSP0eKytw)"
+
+    if hometeam == "Fremantle" or awayteam == "Fremantle":
+        if hometeam == "Fremantle" and homescore > awayscore or awayteam == "Fremantle" and awayscore > homescore:
+            result += ". [FOREVER_FREO.GIF](https://gfycat.com/heavykindhoneycreeper)"
+
+    if hometeam == "Sydney" or awayteam == "Sydney":
+        if hometeam == "Sydney" and homescore > awayscore or awayteam == "Sydney" and awayscore > homescore:
+            result += ". [PARKER.GIF](https://gfycat.com/genuineweeamurratsnake)"
+
+    if hometeam == "Adelaide" or awayteam == "Adelaide":
+        if hometeam == "Adelaide" and homescore > awayscore or awayteam == "Adelaide" and awayscore > homescore:
+            result += ". [THUMBS_UP.PNG](https://imgur.com/2rDeGvp)"
+
     return result
 
     # if homescore > awayscore:
@@ -195,13 +347,19 @@ INFORMATION | [](/empty)
     :--|:--
 -----
 
-**Result** | >!"""+formatresult(gamedata)+"""!<
+**Result** | """+formatresult(gamedata)+"""
 
 **Date** |  """+formattedDate+"""
 
 **Time** |  """+formattedTime+" "+tz+"""
 
 **Ground** | """+gamedata["venue"]+"""
+
+-----
+
+**Match Thread** |  [**Link**]("""+config.subredditurlbase +gamedata["matchthreadurl"]+""")
+
+**Match Thread Hub** |  [**Link**]("""+config.subredditurlbase +gamedata["roundhuburl"]+""")
 
 -----
     
@@ -212,6 +370,7 @@ INFORMATION | [](/empty)
     
     if postmatchurl:
         updateroundhub(str(postmatchurl))
+        redditmatchthreadupdate(gamedata, str(postmatchurl))  
 
 
 def gamefinished():
@@ -225,7 +384,7 @@ def gamefinished():
 
     row = cursor.fetchone()
 
-    makepostmatch(dict(row))   
+    makepostmatch(dict(row)) 
             
 
 # Define a function to handle SSE
@@ -242,6 +401,7 @@ def handle_sse():
 
             # Check if the event type is winner
             if event.event == "winner":
+                print("Game over man. Game over")
                 gamefinished()
                 # Break the loop and disconnect
                 break

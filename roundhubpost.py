@@ -16,7 +16,7 @@ def formatteamname(rawteamname):
         return rawteamname
 
 
-def createandschedulematchthreadscript():
+def createandschedulematchthreadscript(huburl):
     # Connect to the database
     conn = sqlite3.connect(config.directory + 'botdatabase.db')
     conn.row_factory = sqlite3.Row  
@@ -56,6 +56,7 @@ def createandschedulematchthreadscript():
 
             # Insert the gamedata to the script
             lines.insert(8, "data = '"+json.dumps(gamedata)+"'\n")
+            lines.insert(9, "huburl = '"+huburl+"'\n")
 
             # Open the file named in write mode
             with open(config.directory +'/SSEScripts/MatchThreads/'+str(scriptname)+'.py', 'w') as f:
@@ -198,7 +199,7 @@ def createpost():
     cursor = conn.cursor()
 
     # Retrieve all data from the currentround table
-    cursor.execute("SELECT * FROM currentround")
+    cursor.execute("SELECT * FROM currentround ORDER BY datetime(strftime('%Y-%m-%d %H:%M:%S', date)) ASC")
     rows = cursor.fetchall()
 
     # Get the round number 
@@ -251,11 +252,11 @@ def createpost():
     huburl = reddit.subreddit(config.subreddit).submit(title=post_title, selftext=post_body)
 
     updatedatabase(str(huburl))
+    createandschedulematchthreadscript(str(huburl))
+    createandscheduleSSEscript()
 
 try:
     createpost()
-    createandschedulematchthreadscript()
-    createandscheduleSSEscript()
 except Exception as e:
     print(e)
 
@@ -270,7 +271,7 @@ except Exception as e:
     
     # Set up recipient username and message subject and body
     recipient =  config.messagerecipient
-    subject = "An error occurred in the scratchpad"
+    subject = "An error occurred in the round hub post"
     body = f"An error occurred:\n\n{e}"
 
     # Send message to recipient if an exception occurs

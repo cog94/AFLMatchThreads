@@ -5,6 +5,9 @@ import praw
 import sqlite3
 
 
+
+
+
 # format team names to match reddit format
 def formatteamname(rawteamname):
     if rawteamname == "Greater Western Sydney":
@@ -33,7 +36,7 @@ def redditsubmissionupdate():
     cursor = conn.cursor()
 
     # Retrieve all data from the currentround table
-    cursor.execute("SELECT * FROM currentround")
+    cursor.execute("SELECT * FROM currentround ORDER BY datetime(strftime('%Y-%m-%d %H:%M:%S', date)) ASC")
     rows = cursor.fetchall()
 
     huburl = (rows[0]['roundhuburl'])
@@ -204,6 +207,11 @@ Final teams available from the [**AFL Match Centre.**](https://www.afl.com.au/af
 
 -----
 
+**Match Thread Hub** |  [**Link**]("""+config.subredditurlbase+huburl+""")
+
+-----
+
+
 As a reminder, the comment rules are listed in the sidebar. You are responsible for following the rules!
 
 If you see a comment or post that breaks the rules, please report it to the moderators. This helps keep the subreddit clear of rule-breaking content. 
@@ -227,7 +235,7 @@ try:
     createpost()
 except Exception as e:
     print(e)
-    id = gamedata["id"]
+    id = data["id"]
 
     # Set up Reddit API credentials
     reddit = praw.Reddit(
