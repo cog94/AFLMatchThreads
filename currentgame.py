@@ -222,7 +222,7 @@ def redditsubmissionupdate():
     submission.edit(body=post_body)
 
 
-# Define a function to handle a score, and updating the json file
+# Update database scores, and then update the reddit post
 def updateroundhubscores(homescore, awayscore, homegoals, homebehinds, awaygoals, awaybehinds ):
     # Connect to the database
     conn = sqlite3.connect(config.directory + 'botdatabase.db')
@@ -240,6 +240,23 @@ def updateroundhubscores(homescore, awayscore, homegoals, homebehinds, awaygoals
     conn.close()
 
     redditsubmissionupdate()
+
+# Update database scores 
+def updatedatabasescores(homescore, awayscore, homegoals, homebehinds, awaygoals, awaybehinds ):
+    # Connect to the database
+    conn = sqlite3.connect(config.directory + 'botdatabase.db')
+    cursor = conn.cursor()
+
+    # Update database where id = gameid
+    cursor.execute('UPDATE currentround SET hscore=? WHERE id=?', (homescore, gameid))
+    cursor.execute('UPDATE currentround SET ascore=? WHERE id=?', (awayscore, gameid))
+    cursor.execute('UPDATE currentround SET hgoals=? WHERE id=?', (homegoals, gameid))
+    cursor.execute('UPDATE currentround SET hbehinds=? WHERE id=?', (homebehinds, gameid))
+    cursor.execute('UPDATE currentround SET agoals=? WHERE id=?', (awaygoals, gameid))
+    cursor.execute('UPDATE currentround SET abehinds=? WHERE id=?', (awaybehinds, gameid))
+
+    conn.commit()
+    conn.close()
 
 
 def formatresult(gamedata):
@@ -408,14 +425,23 @@ def handle_sse():
 
             # Check if the event type is a score
             if event.event == "score":
-                print("They scored, time to update reddit post")
+                print("They scored")
+                scoretype = str(data["type"])
                 homescore = str(data["score"]["hscore"])
                 homegoals = str(data["score"]["hgoals"])
                 homebehinds = str(data["score"]["hbehinds"])
                 awayscore = str(data["score"]["ascore"])
                 awaygoals = str(data["score"]["agoals"])
                 awaybehinds = str(data["score"]["abehinds"])
-                updateroundhubscores(homescore, awayscore, homegoals, homebehinds, awaygoals, awaybehinds )
+
+                if scoretype == "goal":
+                    print("It was a goal, so it's time to edit the database and round hub")
+                    updateroundhubscores(homescore, awayscore, homegoals, homebehinds, awaygoals, awaybehinds )
+
+                if scoretype == "behind":
+                    print("It was a behind, so we'll only update the database")
+                    updatedatabasescores(homescore, awayscore, homegoals, homebehinds, awaygoals, awaybehinds )
+              
 
 # Try to handle SSE
 try:
